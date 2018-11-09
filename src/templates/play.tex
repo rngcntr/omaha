@@ -1,0 +1,44 @@
+\documentclass[tikz]{standalone}
+
+\usepackage{tikz}
+
+\begin{document}
+
+\begin{tikzpicture}[scale=0.15]
+    \draw [white] (-26.66, -16) rectangle (26.66, 23.5); % bounding box
+
+    \draw [thin]   (-26.66,  0) -- (26.66,  0); % line of scrimmage
+    \draw [dashed] (-26.66,  5) -- (26.66,  5); % 5 yard gain
+    \draw [thin]   (-26.66, 10) -- (26.66, 10); % 10 yard gain
+    \draw [dashed] (-26.66, 15) -- (26.66, 15); % 15 yard gain
+    \draw [thin]   (-26.66, 20) -- (26.66, 20); % 20 yard gain
+
+    % name of play
+    \node at (-26.66, 23.5) [anchor=north west, font=\sffamily] (name) { {{ play.name }} };
+
+    % notes
+    \node at (26.66, -16) [anchor=south east, font=\scriptsize\sffamily] (note) { {{ play.note }} };
+
+    % formation
+    \begin{scope}[auto, every node/.style={draw, semithick, align=center, minimum size=1em}]
+        {% for p in play.players %}
+            \node at ({{ p.xpos }}, {{ p.ypos }}) [{{ p.eligibility }}] ({{ p.name }}) {};
+        {% endfor %}
+    \end{scope}
+
+    % routes
+    \begin{scope}[auto, every path/.style={semithick, ->}]
+        {% for r in play.receivers %}
+            \draw ({{ r.name }}.{{ r.direction }}) -- ({{ r.name }}.{{ r.direction }} |- {{ r.xdir }}, {{ r.ydir }}){% for m in r.moves %} -- ++({{ m.xdir }}, {{ m.ydir }}){% endfor %};
+        {% endfor %}
+    \end{scope}
+
+    % blocking
+    \begin{scope}[auto, every path/.style={semithick, -|}]
+        {% for b in play.blockers %}
+            \draw ({{ b.name }}.{{ b.direction }}) -- ++({{ b.xdir }}, {{ b.ydir }});
+        {% endfor %}
+    \end{scope}
+\end{tikzpicture}
+
+\end{document}
