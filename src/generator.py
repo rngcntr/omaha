@@ -36,16 +36,7 @@ class Move:
         self.xdir = xdir
         self.ydir = ydir
 
-def main():
-    file_loader = FileSystemLoader('templates')
-    env = Environment(loader=file_loader)
-    template = env.get_template('play.tex')
-
-    name = 'Name of the Play'
-    note = 'Special Notes'
-
-    players = {}
-
+def parse_players(players):
     players['wr1'] = Player('wr1', True,  -25, -2.5)
     players['wr2'] = Player('wr2', True,   19, -1.5)
     players['wr3'] = Player('wr3', True,   22, -2.5)
@@ -58,17 +49,32 @@ def main():
     players['rt']  = Player('rt',  False,   6, -1.5)
     players['qb']  = Player('qb',  True,    0, -7.5)
 
+def parse_routes(players):
     players['wr1'].set_route('north',    [Move(0,4), Move( 3,0)])
     players['wr2'].set_route('north',    [Move(0,8), Move(-3,0)])
     players['wr3'].set_route('north',    [Move(0,8), Move(-3,3)])
     players['wr4'].set_route('north',    [Move(0,8), Move(-3,3)])
 
+def parse_blocks(players):
     players['te1'].set_block('north',    [Move(0,1)])
     players['lt'] .set_block('north',    [Move(0,1)])
     players['lg'] .set_block('north',    [Move(0,1)])
     players['c']  .set_block('north',    [Move(0,1)])
     players['rg'] .set_block('north',    [Move(0,1)])
     players['rt'] .set_block('north',    [Move(0,1)])
+
+def main():
+    file_loader = FileSystemLoader('templates')
+    env = Environment(loader=file_loader)
+    template = env.get_template('play.tex')
+
+    name = 'Name of the Play'
+    note = 'Special Notes'
+
+    players = {}
+    parse_players(players)
+    parse_routes(players)
+    parse_blocks(players)
 
     receivers = [p for p in players.values() if p.moves and not p.blocking]
     blockers = [p for p in players.values() if p.blocking]
