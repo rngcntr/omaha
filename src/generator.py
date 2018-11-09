@@ -51,4 +51,5 @@ blockers = [p for p in players if p.direction and not p.moves]
 
 play = Play(name, note, players, receivers, blockers)
 
-print(template.render(play=play))
+output_file = open('../build/play.tex', 'w')
+output_file.write(template.render(play=play))
