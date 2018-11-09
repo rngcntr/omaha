@@ -9,14 +9,16 @@ class Play:
         self.blockers = blockers
 
 class Player:
-    def __init__(self, name, eligibility, xpos, ypos, direction, xdir, ydir, moves):
+    def __init__(self, name, eligibility, blocking, xpos, ypos, direction, moves):
         self.name = name
-        self.eligibility = eligibility
+        if eligibility:
+            self.eligibility = 'circle'
+        else:
+            self.eligibility = 'rectangle'
+        self.blocking = blocking
         self.xpos = xpos
         self.ypos = ypos
         self.direction = direction
-        self.xdir = xdir
-        self.ydir = ydir
         self.moves = moves
 
 class Move:
@@ -31,23 +33,22 @@ template = env.get_template('play.tex')
 name = 'Name of the Play'
 note = 'Special Notes'
 
-wr1 = Player('wr1', 'circle', -25, -2.5, 'north', 0, 4, [Move(3,0)])
-wr2 = Player('wr2', 'circle', 19, -1.5, 'north', 0, 8, [Move(-3,0)])
-wr3 = Player('wr3', 'circle', 22, -2.5, 'north', 0, 8, [Move(-3,3)])
-wr4 = Player('wr4', 'circle', 25, -2.5, 'north', 0, 8, [Move(-3,3)])
+players = [
+        Player('wr1', True,  False, -25, -2.5, 'north',    [Move(0,4), Move( 3,0)]),
+        Player('wr2', True,  False,  19, -1.5, 'north',    [Move(0,8), Move(-3,0)]),
+        Player('wr3', True,  False,  22, -2.5, 'north',    [Move(0,8), Move(-3,3)]),
+        Player('wr4', True,  False,  25, -2.5, 'north',    [Move(0,8), Move(-3,3)]),
+        Player('te1', True,  True,   -9, -1.5, 'north',    [Move(0,1)]),
+        Player('lt',  False, True,   -6, -1.5, 'north',    [Move(0,1)]),
+        Player('lg',  False, True,   -3, -1.5, 'north',    [Move(0,1)]),
+        Player('c',   False, True,    0, -1.5, 'north',    [Move(0,1)]),
+        Player('rg',  False, True,    3, -1.5, 'north',    [Move(0,1)]),
+        Player('rt',  False, True,    6, -1.5, 'north',    [Move(0,1)]),
+        Player('qb',  True,  False,   0, -7.5, None,       [])
+        ]
 
-te1 = Player('te1', 'circle', -9, -1.5, 'north', 0, 1, [])
-lt = Player('lt', 'rectangle', -6, -1.5, 'north', 0, 1, [])
-lg = Player('lg', 'rectangle', -3, -1.5, 'north', 0, 1, [])
-c = Player('c', 'rectangle', 0, -1.5, 'north', 0, 1, [])
-rg = Player('rg', 'rectangle', 3, -1.5, 'north', 0, 1, [])
-rt = Player('rt', 'rectangle', 6, -1.5, 'north', 0, 1, [])
-
-qb = Player('qb', 'circle', 0, -7.5, None, None, None, [])
-
-players = [wr1, wr2, wr3, wr4, te1, lt, lg, c, rg, rt, qb]
-receivers = [p for p in players if p.moves]
-blockers = [p for p in players if p.direction and not p.moves]
+receivers = [p for p in players if p.moves and not p.blocking]
+blockers = [p for p in players if p.blocking]
 
 play = Play(name, note, players, receivers, blockers)
 

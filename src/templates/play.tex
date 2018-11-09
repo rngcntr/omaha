@@ -29,14 +29,14 @@
     % routes
     \begin{scope}[auto, every path/.style={semithick, ->}]
         {% for r in play.receivers %}
-            \draw ({{ r.name }}.{{ r.direction }}) -- ({{ r.name }}.{{ r.direction }} |- {{ r.xdir }}, {{ r.ydir }}){% for m in r.moves %} -- ++({{ m.xdir }}, {{ m.ydir }}){% endfor %};
+            \draw ({{ r.name }}.{{ r.direction }}) -- ({{ r.name }}.{{ r.direction }} |- {{ r.moves[0].xdir }}, {{ r.moves[0].ydir }}){% for m in r.moves[1:] %} -- ++({{ m.xdir }}, {{ m.ydir }}){% endfor %};
         {% endfor %}
     \end{scope}
 
     % blocking
     \begin{scope}[auto, every path/.style={semithick, -|}]
         {% for b in play.blockers %}
-            \draw ({{ b.name }}.{{ b.direction }}) -- ++({{ b.xdir }}, {{ b.ydir }});
+            \draw ({{ b.name }}.{{ b.direction }}) -- ++({{ b.moves[0].xdir }}, {{ b.moves[0].ydir }});
         {% endfor %}
     \end{scope}
 \end{tikzpicture}
