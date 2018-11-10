@@ -76,18 +76,22 @@ class Route:
         self.route = route
 
 def parse_players(players, formation):
-    formation_file = open('res/formations/' + formation.lower().replace(' ', '_'), 'r')
-    for line in formation_file.readlines():
-        line = line.strip()
-        if line == '':
-            continue
-        match = re.match('(E|I)\s*([a-z]+[a-z0-9]*)\s*\(\s*([-+]?[0-9]*\.?[0-9]+)\s*,\s*([-+]?[0-9]*\.?[0-9]+)\s*\)', line, re.M|re.I)
-        if match:
-            groups = [match.group(1), match.group(2), match.group(3), match.group(4)]
-            players[groups[1]] = Player(groups[1], groups[0] == 'E', float(groups[2]), float(groups[3]))
-        else:
-            print('Illegal syntax in file \'{}\': \'{}\''.format(formation, line))
-            sys.exit(1)
+    try:
+        formation_file = open('res/formations/' + formation.lower().replace(' ', '_'), 'r')
+        for line in formation_file.readlines():
+            line = line.strip()
+            if line == '':
+                continue
+            match = re.match('(E|I)\s*([a-z]+[a-z0-9]*)\s*\(\s*([-+]?[0-9]*\.?[0-9]+)\s*,\s*([-+]?[0-9]*\.?[0-9]+)\s*\)', line, re.M|re.I)
+            if match:
+                groups = [match.group(1), match.group(2), match.group(3), match.group(4)]
+                players[groups[1]] = Player(groups[1], groups[0] == 'E', float(groups[2]), float(groups[3]))
+            else:
+                print('Illegal syntax in file \'{}\': \'{}\''.format(formation, line))
+                sys.exit(1)
+    except FileNotFoundError:
+        print('Unknown formation: \'{}\''.format(formation))
+        sys.exit(1)
 
 def parse_routes(players, routes):
     routes = routes.strip()
@@ -105,15 +109,19 @@ def parse_routes(players, routes):
                 print('Illegal route: \'{}\''.format(route))
 
 def parse_blocking(players, blocking):
-    blocking_file = open('res/blocking/' + blocking.lower().replace(' ', '_'), 'r')
-    for line in blocking_file.readlines():
-        line = line.strip()
-        if line == '':
-            continue
-        match = re.match('([a-z]+[a-z0-9]*)\s*(north|north east|east|south east|south|south west|west|north west)', line, re.M|re.I)
-        moves = re.findall('\(\s*([-+]?[0-9]*\.?[0-9]+)\s*,\s*([-+]?[0-9]*\.?[0-9]+)\s*\)', line, re.M|re.I)
-        moves = [Move(x,y) for (x,y) in moves]
-        players[match.group(1)].set_block(match.group(2), moves)
+    try:
+        blocking_file = open('res/blocking/' + blocking.lower().replace(' ', '_'), 'r')
+        for line in blocking_file.readlines():
+            line = line.strip()
+            if line == '':
+                continue
+            match = re.match('([a-z]+[a-z0-9]*)\s*(north|north east|east|south east|south|south west|west|north west)', line, re.M|re.I)
+            moves = re.findall('\(\s*([-+]?[0-9]*\.?[0-9]+)\s*,\s*([-+]?[0-9]*\.?[0-9]+)\s*\)', line, re.M|re.I)
+            moves = [Move(x,y) for (x,y) in moves]
+            players[match.group(1)].set_block(match.group(2), moves)
+    except FileNotFoundError:
+        print('Unknown blocking scheme: \'{}\''.format(blocking))
+        sys.exit(1)
 
 def main():
     file_loader = FileSystemLoader('src/templates')
@@ -122,18 +130,18 @@ def main():
 
     players = {}
 
-    if len(sys.argv) < 6:
-        print('5 arguments needed, only {} given'.format(sys.argc - 1))
-        sys.exit(1)
+    name = input("Name of the Play > ")
 
-    parse_players(players, sys.argv[3])
-    parse_blocking(players, sys.argv[4])
-    parse_routes(players, sys.argv[5])
+    parse_players(players, input("Formation > "))
+    parse_blocking(players, input("Blocking > "))
+    parse_routes(players, input("Routes > "))
+
+    notes = input("Special Notes > ")
 
     receivers = [p for p in players.values() if p.moves and not p.blocking]
     blockers = [p for p in players.values() if p.blocking]
 
-    play = Play(sys.argv[1], sys.argv[2], players.values(), receivers, blockers)
+    play = Play(name, notes, players.values(), receivers, blockers)
 
     output_file = open('src-gen/play.tex', 'w')
     output_file.write(template.render(play=play))
