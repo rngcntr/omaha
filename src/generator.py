@@ -1,5 +1,7 @@
 from jinja2 import Environment, FileSystemLoader
 from enum import Enum
+import sys
+import re
 
 class Play:
     def __init__(self, name, note, players, receivers, blockers):
@@ -73,24 +75,37 @@ class Route:
         self.depth = depth
         self.route = route
 
-def parse_players(players):
-    players['wr1'] = Player('wr1', True,  -24, -2.5)
-    players['wr2'] = Player('wr2', True,   18, -1.5)
-    players['wr3'] = Player('wr3', True,   21, -2.5)
-    players['wr4'] = Player('wr4', True,   24, -2.5)
-    players['te1'] = Player('te1', True,   -9, -1.5)
-    players['lt']  = Player('lt',  False,  -6, -1.5)
-    players['lg']  = Player('lg',  False,  -3, -1.5)
-    players['c']   = Player('c',   False,   0, -1.5)
-    players['rg']  = Player('rg',  False,   3, -1.5)
-    players['rt']  = Player('rt',  False,   6, -1.5)
-    players['qb']  = Player('qb',  True,    0, -7.5)
+def parse_players(players, formation):
+    formation_file = open('../build/formations/' + formation.replace(' ', '_'), 'r')
+    for line in formation_file.readlines():
+        line = line.strip()
+        if line == '':
+            continue
+        match = re.match('(E|I)\s*([a-z]+[a-z0-9]*)\s*\(\s*([-+]?[0-9]*\.?[0-9]+)\s*,\s*([-+]?[0-9]*\.?[0-9]+)\s*\)', line, re.M|re.I)
+        if match:
+            groups = [match.group(1), match.group(2), match.group(3), match.group(4)]
+            players[groups[1]] = Player(groups[1], groups[0] == 'E', float(groups[2]), float(groups[3]))
+        else:
+            print('Illegal syntax in file \'{}\': \'{}\''.format(formation, line))
+            sys.exit(1)
 
-def parse_routes(players):
-    players['wr1'].set_base_route(Route(BaseRoute['CURL'], 13))
-    players['wr2'].set_base_route(Route(BaseRoute['IN'], 7))
-    players['wr3'].set_route('north',    [Move(0,8), Move(-3.5,3.5)])
-    players['wr4'].set_base_route(Route(BaseRoute['POST'], 8))
+def parse_routes(players, routes):
+    routes = routes.strip()
+    match = re.findall('(?:\s*([a-z]+[a-z0-9]*)\s+(FLAT|SLANT|GO|[0-9]+\s+(?:COMEBACK|CURL|OUT|IN|CORNER|POST))\s*)', routes, re.M|re.I)
+    for (player, route) in match:
+        rmatch = re.match('^([0-9]+)\s*(COMEBACK|CURL|OUT|IN|CORNER|POST)$', route, re.M|re.I)
+        if rmatch:
+            players[player].set_base_route(Route(BaseRoute[rmatch.group(2).upper()], rmatch.group(1)))
+        else:
+            rmatch = re.match('^(FLAT|SLANT|GO)$', route, re.M|re.I)
+            if rmatch:
+                players[player].set_base_route(Route(BaseRoute[rmatch.group(1).upper()]))
+            else:
+                print('Illegal route: \'{}\''.format(route))
+    #players['wr1'].set_base_route(Route(BaseRoute['CURL'], 13))
+    #players['wr2'].set_base_route(Route(BaseRoute['IN'], 7))
+    #players['wr3'].set_route('north',    [Move(0,8), Move(-3.5,3.5)])
+    #players['wr4'].set_base_route(Route(BaseRoute['POST'], 8))
 
 def parse_blocks(players):
     players['te1'].set_block('north',    [Move(0,1)])
@@ -109,9 +124,9 @@ def main():
     name = 'Name of the Play'
     note = 'Special Notes'
 
-    parse_players(players)
-    parse_routes(players)
+    parse_players(players, 'trips_right')
     parse_blocks(players)
+    parse_routes(players, 'wr1 7 in wr2 slant wr3 8 post wr4 go')
 
     receivers = [p for p in players.values() if p.moves and not p.blocking]
     blockers = [p for p in players.values() if p.blocking]
