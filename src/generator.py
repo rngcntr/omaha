@@ -76,7 +76,7 @@ class Route:
         self.route = route
 
 def parse_players(players, formation):
-    formation_file = open('../build/formations/' + formation.replace(' ', '_'), 'r')
+    formation_file = open('res/formations/' + formation.lower().replace(' ', '_'), 'r')
     for line in formation_file.readlines():
         line = line.strip()
         if line == '':
@@ -100,40 +100,42 @@ def parse_routes(players, routes):
             rmatch = re.match('^(FLAT|SLANT|GO)$', route, re.M|re.I)
             if rmatch:
                 players[player].set_base_route(Route(BaseRoute[rmatch.group(1).upper()]))
+                #alternative: players['wr3'].set_route('north',    [Move(0,8), Move(-3.5,3.5)])
             else:
                 print('Illegal route: \'{}\''.format(route))
-    #players['wr1'].set_base_route(Route(BaseRoute['CURL'], 13))
-    #players['wr2'].set_base_route(Route(BaseRoute['IN'], 7))
-    #players['wr3'].set_route('north',    [Move(0,8), Move(-3.5,3.5)])
-    #players['wr4'].set_base_route(Route(BaseRoute['POST'], 8))
 
-def parse_blocks(players):
-    players['te1'].set_block('north',    [Move(0,1)])
-    players['lt'] .set_block('north',    [Move(0,1)])
-    players['lg'] .set_block('north',    [Move(0,1)])
-    players['c']  .set_block('north',    [Move(0,1)])
-    players['rg'] .set_block('north',    [Move(0,1)])
-    players['rt'] .set_block('north',    [Move(0,1)])
+def parse_blocking(players, blocking):
+    blocking_file = open('res/blocking/' + blocking.lower().replace(' ', '_'), 'r')
+    for line in blocking_file.readlines():
+        line = line.strip()
+        if line == '':
+            continue
+        match = re.match('([a-z]+[a-z0-9]*)\s*(north|north east|east|south east|south|south west|west|north west)', line, re.M|re.I)
+        moves = re.findall('\(\s*([-+]?[0-9]*\.?[0-9]+)\s*,\s*([-+]?[0-9]*\.?[0-9]+)\s*\)', line, re.M|re.I)
+        moves = [Move(x,y) for (x,y) in moves]
+        players[match.group(1)].set_block(match.group(2), moves)
 
 def main():
-    file_loader = FileSystemLoader('templates')
+    file_loader = FileSystemLoader('src/templates')
     env = Environment(loader=file_loader)
     template = env.get_template('play.tex')
 
     players = {}
-    name = 'Name of the Play'
-    note = 'Special Notes'
 
-    parse_players(players, 'trips_right')
-    parse_blocks(players)
-    parse_routes(players, 'wr1 7 in wr2 slant wr3 8 post wr4 go')
+    if len(sys.argv) < 6:
+        print('5 arguments needed, only {} given'.format(sys.argc - 1))
+        sys.exit(1)
+
+    parse_players(players, sys.argv[3])
+    parse_blocking(players, sys.argv[4])
+    parse_routes(players, sys.argv[5])
 
     receivers = [p for p in players.values() if p.moves and not p.blocking]
     blockers = [p for p in players.values() if p.blocking]
 
-    play = Play(name, note, players.values(), receivers, blockers)
+    play = Play(sys.argv[1], sys.argv[2], players.values(), receivers, blockers)
 
-    output_file = open('../build/play.tex', 'w')
+    output_file = open('src-gen/play.tex', 'w')
     output_file.write(template.render(play=play))
 
 if __name__ == '__main__':
